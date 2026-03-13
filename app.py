@@ -41,7 +41,7 @@ ref = df_growth[df_growth['Level'] == selected_lv].iloc[0]
 mon = df_monster[df_monster['Monster_Lv'] == selected_lv].iloc[0]
 
 st.sidebar.divider()
-st.sidebar.subheader("⚔️ 장비 및 강화 세팅")
+st.sidebar.subheader("⚔️ 장비 아이템 세팅")
 
 # [보정] 공격력 슬라이더 (기본값 초기화 포함)
 base_atk = int(ref['Atk'])
@@ -75,13 +75,14 @@ user_crit_dmg = st.sidebar.slider("치명타 피해 (%)", 150, 300, 150, key=f"c
 st.sidebar.divider()
 st.sidebar.markdown(f"""
 <div style="background-color: #31333F; padding: 20px; border-radius: 12px; border: 1px solid #464855;">
-    <p style="color: #FFFFFF; font-size: 1.2em; font-weight: 700; margin-bottom: 15px; border-left: 4px solid #FF4B4B; padding-left: 10px;">
+    <p style="color: #FFFFFF; font-size: 0.8em; font-weight: 700; margin-bottom: 15px; border-left: 4px solid #FF4B4B; padding-left: 10px;">
         🎯 레벨 {selected_lv} 설계 목표
     </p>
-    <div style="color: #FFFFFF; font-size: 1.1em; line-height: 1.8; margin-left: 14px;">
+    <div style="color: #FFFFFF; font-size: 0.7em; line-height: 1.8; margin-left: 14px;">
+        명중 확률: <b>100%</b><br>
         치명타 확률: <b>{int(CRIT_RATE_TARGET*100)}%</b><br>
         치명타 피해: <b>{int(ref['Final_Crit_Dmg']*100)}%</b>
-    </div>
+        </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -122,4 +123,4 @@ fig.add_trace(go.Scatter(x=[selected_lv], y=[cur_dmg], mode='markers', marker=di
 fig.update_layout(xaxis_title="Character Level", yaxis_title="Effective Damage", template="plotly_white", height=450)
 st.plotly_chart(fig, use_container_width=True)
 
-st.info(f"**Designer's Insight**: {mon['Name']}(Lv.{selected_lv}) 상대 시뮬레이션. 몬스터 체력: {int(mon['HP']):,} / 요구 명중: {int(ref['Req_Acc'])}")
+st.info(f"**Monster Info**: {mon['Name']}(Lv.{selected_lv}) | 체력: {int(mon['HP']):,} | 목표 명중치: {int(ref['Req_Acc'])}")
