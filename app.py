@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+import math
 
 # ---------------------------------------------------------
 # 1. 환경 설정 및 데이터 로드
@@ -30,77 +31,80 @@ def load_all_data():
 
 const, df_growth, df_monster = load_all_data()
 CRIT_RATE_TARGET = float(const.get('Crit_Rate_Max', 0.8))
-K_VALUE = float(const.get('Defense_K', 2000.0))
 
 # ---------------------------------------------------------
-# 2. 사이드바: 시뮬레이션 컨트롤러 (공격력 슬라이더 적용)
+# 2. 사이드바: 시뮬레이션 컨트롤러 (초기화 로직 포함)
 # ---------------------------------------------------------
 st.sidebar.header("🕹️ Player Growth Simulator")
 selected_lv = st.sidebar.slider("캐릭터 레벨 (Level)", 1, 100, 1)
 ref = df_growth[df_growth['Level'] == selected_lv].iloc[0]
+mon = df_monster[df_monster['Monster_Lv'] == selected_lv].iloc[0]
 
 st.sidebar.divider()
 st.sidebar.subheader("⚔️ 장비 및 강화 세팅")
 
-# [보정] 공격력: 기본값의 10배를 Max로 하는 슬라이더 방식 (정수 단위)
+# [핵심 보정] key에 selected_lv를 넣어 레벨 변경 시 모든 슬라이더 초기화
 base_atk = int(ref['Atk'])
 user_atk = st.sidebar.slider(
     "현재 공격력 (Attack)", 
-    min_value=base_atk, 
-    max_value=base_atk * 10, 
-    value=base_atk, 
-    step=1,
-    help=f"해당 레벨의 기본 공격력은 {base_atk:,}입니다. 최대 10배까지 시뮬레이션 가능합니다."
+    base_atk, base_atk * 10, base_atk, 
+    key=f"atk_{selected_lv}", # 레벨 변경 시 리셋
+    help=f"기본 공격력 {base_atk:,}의 최대 10배까지 시뮬레이션"
 )
 
-# [보정] 명중: 요구치까지만 정수 단위로 제한
 reward_gap = max(0, int(ref['Req_Acc'] - ref['Acc']))
 bonus_acc = 0
 if reward_gap > 0:
-    bonus_acc = st.sidebar.slider("장비 추가 명중 (Bonus Acc)", 0, reward_gap, 0, step=1)
+    bonus_acc = st.sidebar.slider("장비 추가 명중 (Bonus Acc)", 0, reward_gap, 0, key=f"acc_{selected_lv}")
 else:
     st.sidebar.info("✅ 기본 명중이 충분한 구간입니다.")
 
-# 확률/피해 슬라이더: 정수 단위
-user_crit_rate = st.sidebar.slider("치명타 확률 (%)", 0, int(CRIT_RATE_TARGET * 100), 0, step=1) / 100
-user_crit_dmg = st.sidebar.slider("치명타 피해 (%)", 150, 300, 150, step=1) / 100
+user_crit_rate = st.sidebar.slider("치명타 확률 (%)", 0, int(CRIT_RATE_TARGET * 100), 0, key=f"cr_{selected_lv}") / 100
+user_crit_dmg = st.sidebar.slider("치명타 피해 (%)", 150, 300, 150, key=f"cd_{selected_lv}") / 100
 
-# [디자인 개선] 가이드 박스: 폰트 크기 및 색상 밸런스 최적화
+# [디자인 보정] 가이드 박스 폰트 크기 위계 조정
 st.sidebar.divider()
 st.sidebar.markdown(f"""
-<div style="background-color: #31333F; padding: 18px; border-radius: 12px; border: 1px solid #464855;">
-    <p style="color: #FFFFFF; font-size: 1.05em; font-weight: 600; margin-bottom: 12px;">🎯 레벨 {selected_lv} 설계 표준 목표</p>
-    <div style="color: #E0E0E0; font-size: 1.0em; line-height: 1.6;">
-        치명타 확률: <b style="color: #FFFFFF;">{int(CRIT_RATE_TARGET*100)}%</b><br>
-        치명타 피해: <b style="color: #FFFFFF;">{int(ref['Final_Crit_Dmg']*100)}%</b>
+<div style="background-color: #31333F; padding: 20px; border-radius: 12px; border: 1px solid #464855;">
+    <p style="color: #FFFFFF; font-size: 1.2em; font-weight: 700; margin-bottom: 15px; border-left: 4px solid #FF4B4B; padding-left: 10px;">
+        🎯 레벨 {selected_lv} 설계 목표
+    </p>
+    <div style="color: #FFFFFF; font-size: 1.1em; line-height: 1.8; margin-left: 14px;">
+        치명타 확률: <b>{int(CRIT_RATE_TARGET*100)}%</b><br>
+        치명타 피해: <b>{int(ref['Final_Crit_Dmg']*100)}%</b>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 3. 전투 연산 로직
+# 3. 전투 연산 로직 (HTK 포함)
 # ---------------------------------------------------------
 def simulate_combat(atk, acc_total, crit_r, crit_d, lv):
     m = df_monster[df_monster['Monster_Lv'] == lv].iloc[0]
     hit_rate = min(1.0, acc_total / m['Evasion_Rating']) if m['Evasion_Rating'] > 0 else 1.0
     crit_mult = 1 + (crit_r * (crit_d - 1))
     e_dmg = atk * hit_rate * crit_mult
-    return e_dmg, int(hit_rate * 100)
+    
+    # HTK (Hits to Kill) 계산
+    htk = math.ceil(m['HP'] / e_dmg) if e_dmg > 0 else 0
+    return e_dmg, int(hit_rate * 100), htk
 
-cur_dmg, cur_hit = simulate_combat(user_atk, (ref['Acc'] + bonus_acc), user_crit_rate, user_crit_dmg, selected_lv)
+cur_dmg, cur_hit, cur_htk = simulate_combat(user_atk, (ref['Acc'] + bonus_acc), user_crit_rate, user_crit_dmg, selected_lv)
 
 # ---------------------------------------------------------
 # 4. 메인 대시보드
 # ---------------------------------------------------------
 st.title("⚔️ Combat Balance Simulator")
 
-c1, c2, c3 = st.columns(3)
+c1, c2, c3, c4 = st.columns(4) # HTK를 위해 4열로 확장
 with c1:
     diff = round((cur_dmg / ref['E_Dmg_Ref'] - 1) * 100, 1)
     st.metric("기대 대미지 (E.Dmg)", f"{int(cur_dmg):,}", f"{diff}% vs 설계표준")
 with c2:
     st.metric("현재 명중률", f"{cur_hit}%", f"{cur_hit-100}%" if cur_hit < 100 else "MAX")
 with c3:
+    st.metric("목표 처치 타수 (HTK)", f"{cur_htk} hits", help="몬스터 체력을 기대 대미지로 나눈 값")
+with c4:
     st.metric("표준 전투력 (Ref.CP)", f"{int(ref['CP_Ref']):,}")
 
 # 차트 시각화
@@ -110,6 +114,4 @@ fig.add_trace(go.Scatter(x=[selected_lv], y=[cur_dmg], mode='markers', marker=di
 fig.update_layout(xaxis_title="Character Level", yaxis_title="Effective Damage", template="plotly_white", height=450)
 st.plotly_chart(fig, use_container_width=True)
 
-# 기획 인사이트 (보너스 수치 강조)
-bonus_atk_val = int(user_atk - base_atk)
-st.info(f"**Designer's Insight**: 현재 보너스 공격력 +{bonus_atk_val:,} (기본 대비 {round((user_atk/base_atk-1)*100)}% 증가). 명중 {int(ref['Acc']+bonus_acc)} / 요구 {int(ref['Req_Acc'])}")
+st.info(f"**Designer's Insight**: {mon['Name']}(Lv.{selected_lv}) 상대 시뮬레이션. 몬스터 체력: {int(mon['HP']):,} / 요구 명중: {int(ref['Req_Acc'])}")
