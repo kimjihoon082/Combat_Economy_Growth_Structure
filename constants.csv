@@ -1,0 +1,22 @@
+﻿ConstantName,,Value,Unit,Description
+Defense_K,,"2,000",pts,방어 상수
+Base_Attack,,10,hit,공격력 초기값
+Base_Defense,,120,pts,방어력 초기값
+Base_HP,,100,pts,생명력 초기값
+Base_HTK,,3,pts,기준 HTK
+HTK_Growth_Step,,0.17,scalar,전투 호흡 가중치
+Acc_Base_Init,,10,pts,캐릭터 초기 명중 점수
+Acc_Base_Growth,,2,pts,레벨당 기본 명중 증가량
+Acc_Req_Incr_Base,,2,pts,요구치 기본 증가폭
+Acc_Req_Hurdle_Lv,,20,Lv,요구 가속 시점 (Threshold)
+Acc_Req_Accel_Factor,,2.5,scalar,요구치 가속 계수
+Crit_Base_Req,,1000,pts,치명타 요구치 초기값
+Crit_Req_Accel_Factor,,1.01,scalar,치명타 요구 가속 계수
+Crit_Rate_Max,,0.8,ratio,치명타 확률 상한
+Crit_Dmg_Base,,1.5,ratio,기본 치명타 피해
+Crit_Dmg_Max,,3,ratio,치명타 피해 상한
+Crit_Dmg_Incr,,0.02,ratio,레벨당 치명타 피해 증가량
+W_Offense,,1,ratio,공격 가중치
+W_Defense,,1,ratio,방어 가중치
+Gold_per_CP,,5,gold,CP당 골드 가치
+CP_Scale_Factor,,1,scalar,CP 보정 계수
