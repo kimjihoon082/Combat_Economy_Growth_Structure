@@ -33,7 +33,7 @@ CRIT_RATE_TARGET = float(const.get('Crit_Rate_Max', 0.8))
 K_VALUE = float(const.get('Defense_K', 2000.0))
 
 # ---------------------------------------------------------
-# 2. 사이드바: 시뮬레이션 컨트롤러
+# 2. 사이드바: 시뮬레이션 컨트롤러 (공격력 슬라이더 적용)
 # ---------------------------------------------------------
 st.sidebar.header("🕹️ Player Growth Simulator")
 selected_lv = st.sidebar.slider("캐릭터 레벨 (Level)", 1, 100, 1)
@@ -42,13 +42,15 @@ ref = df_growth[df_growth['Level'] == selected_lv].iloc[0]
 st.sidebar.divider()
 st.sidebar.subheader("⚔️ 장비 및 강화 세팅")
 
-# [보정] 공격력: 최소값을 기본 공격력으로 고정하여 마이너스 방지, 정수 단위 조절
-atk_step = max(1, int(ref['Atk'] * 0.1))
-user_atk = st.sidebar.number_input(
+# [보정] 공격력: 기본값의 10배를 Max로 하는 슬라이더 방식 (정수 단위)
+base_atk = int(ref['Atk'])
+user_atk = st.sidebar.slider(
     "현재 공격력 (Attack)", 
-    min_value=int(ref['Atk']), # 마이너스 방지
-    value=int(ref['Atk']), 
-    step=atk_step
+    min_value=base_atk, 
+    max_value=base_atk * 10, 
+    value=base_atk, 
+    step=1,
+    help=f"해당 레벨의 기본 공격력은 {base_atk:,}입니다. 최대 10배까지 시뮬레이션 가능합니다."
 )
 
 # [보정] 명중: 요구치까지만 정수 단위로 제한
@@ -59,17 +61,19 @@ if reward_gap > 0:
 else:
     st.sidebar.info("✅ 기본 명중이 충분한 구간입니다.")
 
-# [보정] 확률/피해 슬라이더: 정수 단위(step=1)로 통일
+# 확률/피해 슬라이더: 정수 단위
 user_crit_rate = st.sidebar.slider("치명타 확률 (%)", 0, int(CRIT_RATE_TARGET * 100), 0, step=1) / 100
 user_crit_dmg = st.sidebar.slider("치명타 피해 (%)", 150, 300, 150, step=1) / 100
 
-# [디자인 개선] 설계 표준 목표 가이드 박스 (밝은 폰트 적용)
+# [디자인 개선] 가이드 박스: 폰트 크기 및 색상 밸런스 최적화
 st.sidebar.divider()
 st.sidebar.markdown(f"""
-<div style="background-color: #31333F; padding: 15px; border-radius: 10px; border: 1px solid #464855;">
-    <p style="color: #E0E0E0; font-size: 0.85em; margin-bottom: 8px;">🎯 레벨 {selected_lv} 설계 표준 목표</p>
-    <span style="color: #FFFFFF; font-size: 0.95em;">치명타 확률: <b>{int(CRIT_RATE_TARGET*100)}%</b></span><br>
-    <span style="color: #FFFFFF; font-size: 0.95em;">치명타 피해: <b>{int(ref['Final_Crit_Dmg']*100)}%</b></span>
+<div style="background-color: #31333F; padding: 18px; border-radius: 12px; border: 1px solid #464855;">
+    <p style="color: #FFFFFF; font-size: 1.05em; font-weight: 600; margin-bottom: 12px;">🎯 레벨 {selected_lv} 설계 표준 목표</p>
+    <div style="color: #E0E0E0; font-size: 1.0em; line-height: 1.6;">
+        치명타 확률: <b style="color: #FFFFFF;">{int(CRIT_RATE_TARGET*100)}%</b><br>
+        치명타 피해: <b style="color: #FFFFFF;">{int(ref['Final_Crit_Dmg']*100)}%</b>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -93,7 +97,7 @@ st.title("⚔️ Combat Balance Simulator")
 c1, c2, c3 = st.columns(3)
 with c1:
     diff = round((cur_dmg / ref['E_Dmg_Ref'] - 1) * 100, 1)
-    st.metric("기대 대미지 (E.Dmg)", f"{int(cur_dmg):,}", f"{diff}% vs 설계표준") # 정수 표시
+    st.metric("기대 대미지 (E.Dmg)", f"{int(cur_dmg):,}", f"{diff}% vs 설계표준")
 with c2:
     st.metric("현재 명중률", f"{cur_hit}%", f"{cur_hit-100}%" if cur_hit < 100 else "MAX")
 with c3:
@@ -106,6 +110,6 @@ fig.add_trace(go.Scatter(x=[selected_lv], y=[cur_dmg], mode='markers', marker=di
 fig.update_layout(xaxis_title="Character Level", yaxis_title="Effective Damage", template="plotly_white", height=450)
 st.plotly_chart(fig, use_container_width=True)
 
-# 기획 인사이트
-bonus_atk_val = int(user_atk - ref['Atk'])
-st.info(f"**Designer's Insight**: 현재 보너스 공격력 +{bonus_atk_val:,} (기본 {int(ref['Atk']):,}). 명중 {int(ref['Acc']+bonus_acc)} / 요구 {int(ref['Req_Acc'])}")
+# 기획 인사이트 (보너스 수치 강조)
+bonus_atk_val = int(user_atk - base_atk)
+st.info(f"**Designer's Insight**: 현재 보너스 공격력 +{bonus_atk_val:,} (기본 대비 {round((user_atk/base_atk-1)*100)}% 증가). 명중 {int(ref['Acc']+bonus_acc)} / 요구 {int(ref['Req_Acc'])}")
