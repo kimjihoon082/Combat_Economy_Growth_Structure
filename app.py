@@ -75,10 +75,10 @@ user_crit_dmg = st.sidebar.slider("치명타 피해 (%)", 150, 300, 150, key=f"c
 st.sidebar.divider()
 st.sidebar.markdown(f"""
 <div style="background-color: #31333F; padding: 20px; border-radius: 12px; border: 1px solid #464855;">
-    <p style="color: #FFFFFF; font-size: 0.8em; font-weight: 700; margin-bottom: 15px; border-left: 4px solid #FF4B4B; padding-left: 10px;">
-        🎯 레벨 {selected_lv} 설계 목표
+    <p style="color: #FFFFFF; font-size: 1em; font-weight: 700; margin-bottom: 15px; border-left: 4px solid #FF4B4B; padding-left: 10px;">
+        🎯 레벨 {selected_lv} 세팅 목표
     </p>
-    <div style="color: #FFFFFF; font-size: 0.7em; line-height: 1.8; margin-left: 14px;">
+    <div style="color: #FFFFFF; font-size: 0.9em; line-height: 1.8; margin-left: 14px;">
         명중 확률: <b>100%</b><br>
         치명타 확률: <b>{int(CRIT_RATE_TARGET*100)}%</b><br>
         치명타 피해: <b>{int(ref['Final_Crit_Dmg']*100)}%</b>
