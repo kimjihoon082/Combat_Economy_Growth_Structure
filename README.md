@@ -1,7 +1,7 @@
 # ⚔️ RPG Combat Balance Simulator v1.0
-**설계자: 김지훈 (Kim Ji-hoon)**
+**기획자: 김지훈 (Kim Ji-hoon)**
 
-본 프로젝트는 RPG 게임의 전투 경제 및 성장 구조를 수학적으로 모델링하고 실시간으로 검증하기 위한 인터랙티브 시뮬레이터입니다. Excel로 설계된 밸런스 엔진을 Python(Streamlit) 환경으로 이식하여, 기획자의 의도가 실제 플레이어의 세팅에 따라 어떻게 변동되는지 시각적으로 증명합니다.
+본 프로젝트는 RPG 게임의 전투 경제 및 성장 구조를 수학적으로 모델링하고 실시간으로 검증하기 위한 인터랙티브 시뮬레이터입니다. Excel로 설계된 밸런스 엔진을 Python(Streamlit) 환경으로 이식하여, 기획자의 의도가 실제 플레이어의 세팅에 따라 어떻게 변동되는지 확인합니다.
 
 > **Live Demo:** [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://combatbalance2engine.streamlit.app/)
 
